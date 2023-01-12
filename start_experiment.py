@@ -34,6 +34,7 @@ def start_experiment():
                     call(script, shell=True, executable='/bin/bash', close_fds=True)
                     print(f"Finished experiment with local_epoch={local_epoch}, local_batch_size={local_batch_size}, client={client}, round={round}")
                     sys.stdout.flush()
+                    exit(0)
                     sleep(3)  # Sleep 3s after result
 
 
