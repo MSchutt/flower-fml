@@ -1,0 +1,2 @@
+localepochs,localbatchsize,clients,rounds,r2,mse,rmse,traintime
+1,16,5,10,0.923688814453497,1223582.375,1106.1566162109375,11.266671895980835
