@@ -4,10 +4,10 @@ from time import sleep
 
 
 def start_experiment():
-    local_epochs = [1, 10, 100]
-    local_batch_sizes = [16, 32, 64]
-    clients = [5, 10, 25, 35]
-    rounds = [10, 20, 30, 40, 50]
+    local_epochs = [3, 5, 15]
+    local_batch_sizes = [4, 8, 16]
+    clients = [5, 10, 25]
+    rounds = [2, 5, 10]
 
     for local_epoch in local_epochs:
         for local_batch_size in local_batch_sizes:
@@ -34,7 +34,6 @@ def start_experiment():
                     call(script, shell=True, executable='/bin/bash', close_fds=True)
                     print(f"Finished experiment with local_epoch={local_epoch}, local_batch_size={local_batch_size}, client={client}, round={round}")
                     sys.stdout.flush()
-                    exit(0)
                     sleep(3)  # Sleep 3s after result
 
 
