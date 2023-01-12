@@ -25,8 +25,7 @@ class DiamondClient(fl.client.NumPyClient):
         self.num_features = num_features
 
     def set_parameters(self, parameters):
-        """Loads an efficientnet model and replaces it parameters with the ones
-        given."""
+        """Loads a model and replaces it parameters with the ones received from the server."""
         model = MultipleRegression(self.num_features)
         params_dict = zip(model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
@@ -34,7 +33,7 @@ class DiamondClient(fl.client.NumPyClient):
         return model
 
     def fit(self, parameters, config):
-        """Train parameters on the locally held training set."""
+        """Train parameters on the locally held validation set."""
 
         # Update local model parameters
         model = self.set_parameters(parameters)
@@ -60,9 +59,9 @@ class DiamondClient(fl.client.NumPyClient):
         model = self.set_parameters(parameters)
 
         # Evaluate global model parameters on the local validation data and return results
-        testloader = DataLoader(self.valset, batch_size=16, worker_init_fn=seed_worker)
+        valloader = DataLoader(self.valset, batch_size=16, worker_init_fn=seed_worker)
 
-        loss, r2 = utils.test(model, testloader, self.device)
+        loss, r2 = utils.test(model, valloader, self.device)
         return float(loss), len(self.valset), {"r2": float(r2)}
 
 

@@ -31,8 +31,6 @@ def start_experiment():
                     # Wait for all background processes to complete
                     wait
                     '''
-                    print(script)
-                    exit(0)
                     call(script, shell=True, executable='/bin/bash', close_fds=True)
                     print(f"Finished experiment with local_epoch={local_epoch}, local_batch_size={local_batch_size}, client={client}, round={round}")
                     sys.stdout.flush()

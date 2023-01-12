@@ -70,6 +70,7 @@ def main():
     (X_train, y_train), (X_valid, y_valid), (X_test, y_test) = load_data()
     train_loader, val_loader, test_loader, train_dataset, valid_dataset, test_dataset = generate_dataloaders(X_train, y_train, X_valid, y_valid, X_test, y_test, 32)
 
+    # Create the model
     model = MultipleRegression(len(X_train.columns))
     model_parameters = [val.cpu().numpy() for _, val in model.state_dict().items()]
 
@@ -125,6 +126,8 @@ def main():
         strategy=strategy,
     )
 
+    # Use the real testing set (never seen before for the clients) only on the server
+    # Clients optimize locally with validation set
     testing_X = torch.from_numpy(X_test.values).float()
     testing_y = torch.from_numpy(y_test.values).float()
 
