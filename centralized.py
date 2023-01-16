@@ -58,6 +58,7 @@ def calculate_and_print_scores(name, model, X_train, y_train, X_test, y_test):
 
 # Helper function to brute force the best parameters
 def brute_force_model(X_train, y_train):
+    rfr_local = RandomForestRegressor()
     # Possible values
     # Number of trees in random forest
     n_estimators = [int(x) for x in np.linspace(start=200, stop=2000, num=10)]
@@ -79,7 +80,7 @@ def brute_force_model(X_train, y_train):
                    'min_samples_split': min_samples_split,
                    'min_samples_leaf': min_samples_leaf,
                    'bootstrap': bootstrap}
-    rf_random = RandomizedSearchCV(estimator=rfr, param_distributions=random_grid, n_iter=100, cv=3, verbose=2,
+    rf_random = RandomizedSearchCV(estimator=rfr_local, param_distributions=random_grid, n_iter=100, cv=3, verbose=2,
                                    random_state=42, n_jobs=-1)
     rf_random.fit(X_train, y_train)
 
@@ -94,8 +95,7 @@ if __name__ == '__main__':
     pth = Path('data/diamonds.csv')
     (X_train, y_train), (X_valid, y_valid), (X_test, y_test) = load_data(pth)
 
-    # brute_force_model()
-    # These values were taken from the brute force model
+    # brute_force_model(X_train, y_train)
     print('Fitting RandomForestRegressor')
     rfr = RandomForestRegressor()
     rfr.fit(X_train, y_train)

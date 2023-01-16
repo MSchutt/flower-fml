@@ -13,7 +13,7 @@ import seaborn as sns
 from diamondmodel.neural_network import MultipleRegression, MultipleRegressionSmall
 
 BATCH_SIZE = 16
-EPOCHS = 25
+EPOCHS = 10
 LEARNING_RATE = 0.001
 
 def main():
@@ -25,7 +25,7 @@ def main():
 
     # Create and train the model
     num_features = len(X_train.columns)
-    model = MultipleRegressionSmall(num_features)
+    model = MultipleRegression(num_features)
     model.to(device)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)

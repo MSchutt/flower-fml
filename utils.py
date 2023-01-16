@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore")
 # DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
-def load_partition(idx: int, tp: int):
+def load_partition(idx: int, tp: int, enable_small_dataset: bool = False):
     total_partitions = tp + 1
     """Load 1/10th of the training and test data to simulate a partition."""
     (X_train, y_train), (X_valid, y_valid), _ = load_data()
@@ -29,6 +29,11 @@ def load_partition(idx: int, tp: int):
 
     n_train = int(num_examples["trainset"] / total_partitions)
     n_test = int(num_examples["valset"] / total_partitions)
+
+    # If the parameter is enabled, we only take 25% of the available data
+    if enable_small_dataset:
+        n_train = int(n_train * .25)
+        n_test = int(n_test * .25)
 
     train_partition = torch.utils.data.Subset(train_dataset, range(idx * n_train, (idx + 1) * n_train))
     valid_partition = torch.utils.data.Subset(valid_dataset, range(idx * n_test, (idx + 1) * n_test))

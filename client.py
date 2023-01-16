@@ -86,7 +86,16 @@ def main() -> None:
         required=False,
         help="Local Batch Size for the Clients",
     )
+    parser.add_argument(
+        "--distribution",
+        type=int,
+        default=1,
+        required=False,
+        help="Should the data be distributed evenly or randomly",
+    )
     args = parser.parse_args()
+
+    enable_small_dataset = args.distribution == 1
 
     # Load a subset of test to simulate the local data partition
     trainset, valset, num_features = utils.load_partition(args.partition, args.clients)
