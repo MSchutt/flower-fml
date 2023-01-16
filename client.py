@@ -6,7 +6,7 @@ import flwr as fl
 import argparse
 from collections import OrderedDict
 
-from diamondmodel.neural_network import MultipleRegression, MultipleRegressionSmall
+from diamondmodel.neural_network import MultipleRegression, MultipleRegression
 from seed import seed_worker
 g = torch.Generator()
 g.manual_seed(42)
@@ -26,7 +26,7 @@ class DiamondClient(fl.client.NumPyClient):
 
     def set_parameters(self, parameters):
         """Loads a model and replaces it parameters with the ones received from the server."""
-        model = MultipleRegressionSmall(self.num_features)
+        model = MultipleRegression(self.num_features)
         params_dict = zip(model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         model.load_state_dict(state_dict, strict=True)
@@ -95,10 +95,10 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    enable_small_dataset = args.distribution == 1
+    enable_small_dataset = int(args.distribution) == 1
 
-    # Load a subset of test to simulate the local data partition
-    trainset, valset, num_features = utils.load_partition(args.partition, args.clients)
+    # Load a subset of test to simulate the local data partition (every even client)
+    trainset, valset, num_features = utils.load_partition(args.partition, args.clients, int(args.partition) % 2 == 0 and enable_small_dataset)
 
     # Start Flower client
     client = DiamondClient(trainset, valset, device, num_features)

@@ -17,7 +17,7 @@ warnings.filterwarnings("ignore")
 
 def load_partition(idx: int, tp: int, enable_small_dataset: bool = False):
     total_partitions = tp + 1
-    """Load 1/10th of the training and test data to simulate a partition."""
+    """Load 1/xth of the training and test data to simulate a partition."""
     (X_train, y_train), (X_valid, y_valid), _ = load_data()
     train_dataset = DiamondDataset(torch.from_numpy(X_train.values).float(), torch.from_numpy(y_train.values).float())
     valid_dataset = DiamondDataset(torch.from_numpy(X_valid.values).float(), torch.from_numpy(y_valid.values).float())

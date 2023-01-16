@@ -16,7 +16,7 @@ import warnings
 import random
 from diamondmodel.dataset import generate_dataloaders
 from diamondmodel.loader import load_data
-from diamondmodel.neural_network import MultipleRegressionSmall, MultipleRegression
+from diamondmodel.neural_network import MultipleRegression, MultipleRegression
 from seed import seed_worker
 
 warnings.filterwarnings("ignore")
@@ -71,7 +71,7 @@ def main():
     train_loader, val_loader, test_loader, train_dataset, valid_dataset, test_dataset = generate_dataloaders(X_train, y_train, X_valid, y_valid, X_test, y_test, 32)
 
     # Create the model
-    model = MultipleRegressionSmall(len(X_train.columns))
+    model = MultipleRegression(len(X_train.columns))
     model_parameters = [val.cpu().numpy() for _, val in model.state_dict().items()]
 
     # Parse command line argument `partition`
@@ -104,14 +104,17 @@ def main():
         required=False,
         help="Number of Rounds for each client",
     )
+    parser.add_argument(
+        "--distribution",
+        type=int,
+        default=1,
+        required=False,
+        help="Skewed distribution (1) or uniform distribution (0)",
+    )
     args = parser.parse_args()
 
     # Create strategy
     strategy = fl.server.strategy.FedAvg(
-        fraction_fit=0.5,
-        fraction_evaluate=0.2,
-        min_fit_clients=2,
-        min_evaluate_clients=2,
         min_available_clients=args.clients,
         # Server side metrics
         evaluate_fn=get_evaluate_fn(model, test_dataset),
@@ -147,12 +150,13 @@ def main():
         "local_epochs": args.localepochs,
         "local_batch_size": args.batchsize,
         "clients": args.clients,
-        "rounds": args.numrounds
+        "rounds": args.numrounds,
+        "distribution": args.distribution
     }
 
     # Write to results file
     with open("results.csv", "a") as a:
-        a.write(f'{result["local_epochs"]},{result["local_batch_size"]},{result["clients"]},{result["rounds"]},{r2},{mse},{rmse},{time()-start}\n')
+        a.write(f'{result["local_epochs"]},{result["local_batch_size"]},{result["clients"]},{result["rounds"]},{r2},{mse},{rmse},{time()-start},{result["distribution"]}\n')
 
     exit(0)
 

@@ -10,7 +10,7 @@ from diamondmodel.loader import load_data
 from pathlib import Path
 import seaborn as sns
 
-from diamondmodel.neural_network import MultipleRegression, MultipleRegressionSmall
+from diamondmodel.neural_network import MultipleRegression, MultipleRegression
 
 BATCH_SIZE = 16
 EPOCHS = 10

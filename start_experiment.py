@@ -5,9 +5,9 @@ from time import sleep
 
 def start_experiment():
     local_epochs = [3, 5, 15]
-    local_batch_sizes = [4, 8, 16]
-    clients = [5, 10, 25]
-    rounds = [2, 5, 10]
+    local_batch_sizes = [16, 32, 64]
+    clients = [2, 10, 25, 50]
+    rounds = [1, 5, 10]
     # True, false
     enable_distribution = [1, 0]
 
@@ -27,7 +27,7 @@ def start_experiment():
                         #!/bin/bash
                         set -e
                         
-                        python server.py --batchsize {local_batch_size} --localepochs {local_epoch} --clients {client} --numrounds {round} &
+                        python server.py --distribution={distribution} --batchsize {local_batch_size} --localepochs {local_epoch} --clients {client} --numrounds {round} &
                         sleep 5  # Sleep for 5s to give the server enough time to start
                         
                         for i in `seq 0 {client}`; do
@@ -41,11 +41,11 @@ def start_experiment():
                         wait
                         '''
                         call(script, shell=True, executable='/bin/bash', close_fds=True)
-                        print(f"Finished experiment with local_epoch={local_epoch}, local_batch_size={local_batch_size}, client={client}, round={round}")
+                        print(f"Starting experiment with local_epoch={local_epoch}, local_batch_size={local_batch_size}, client={client}, round={round}, enable 25% distribution={distribution}")
                         sys.stdout.flush()
                         progress = float(i / total_runs) * 100
                         print(f'Progress: {progress:.2f}% ({i}/{total_runs} runs)')
-                        sleep(3)  # Sleep 3s after result
+                        sleep(1)  # Sleep 3s after result
 
 start_experiment()
 
