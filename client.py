@@ -128,7 +128,7 @@ def main() -> None:
     # Start Flower client
     client = DiamondClient(trainset, device, num_features, log_file_path, testset)
 
-    fl.client.start_numpy_client(server_address="0.0.0.0:8088", client=client)
+    fl.client.start_numpy_client(server_address="0.0.0.0:8080", client=client)
     exit(0)
 
 if __name__ == "__main__":
