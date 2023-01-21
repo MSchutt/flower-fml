@@ -165,7 +165,7 @@ def main():
 
     # Start Flower server for four rounds of federated learning
     test = fl.server.start_server(
-        server_address="0.0.0.0:8082",
+        server_address="0.0.0.0:8080",
         config=fl.server.ServerConfig(num_rounds=args.numrounds),
         strategy=strategy,
     )

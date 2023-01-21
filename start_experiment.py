@@ -1,6 +1,6 @@
 import sys
 from subprocess import call
-from time import sleep
+from time import sleep, time
 
 
 def start_experiment():
@@ -21,6 +21,7 @@ def start_experiment():
                  len(enable_distribution) * len(fraction_fits)
     print(f"Testing with params -> Total runs: {total_runs}")
 
+    experiment_start = time()
     i = 0
 
     for local_epoch in local_epochs:
@@ -37,7 +38,7 @@ def start_experiment():
                             set -e
                             
                             python server.py --clientSamplingRatio={fraction_fit} --distribution={distribution} --batchsize {local_batch_size} --localepochs {local_epoch} --clients {client} --numrounds {round} --runnumber {i} &
-                            sleep 3  # Sleep for 3s to give the server enough time to start
+                            sleep 5  # Sleep to give the server enough time to start
                             
                             for i in `seq 0 {client - 1}`; do
                                 echo "Starting client $i"
@@ -56,6 +57,6 @@ def start_experiment():
                             progress = float(i / total_runs) * 100
                             print(f'Progress: {progress:.2f}% ({i}/{total_runs} runs)')
                             sleep(1)  # Sleep 1s after result to allow proper teardowns
-
+    print(f'Experiment finished in {time() - experiment_start:.2f}s')
 
 start_experiment()
