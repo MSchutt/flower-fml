@@ -43,11 +43,9 @@ def load_data(file_path: Path = None, random_state=42, test_size=0.3):
     X, y = transform_data(data)
 
     # Train, Valid, Test Split (default params)
-    # 70% Testset
-    # 20% Validation
-    # 10% Test
-    X_train, X_rest, y_train, y_rest = train_test_split(X, y, test_size=test_size, random_state=random_state)
-    X_valid, X_test, y_valid, y_test = train_test_split(X_rest, y_rest, test_size=0.3, random_state=random_state)
+    # 80% Trainset
+    # 20% Test
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=random_state)
 
-    return (X_train, y_train), (X_valid, y_valid), (X_test, y_test)
+    return (X_train, y_train), (X_test, y_test)
 

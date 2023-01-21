@@ -4,7 +4,8 @@ from torch import nn
 class MultipleRegression(nn.Module):
     def __init__(self, num_features: int):
         super(MultipleRegression, self).__init__()
-        self.layers = nn.Sequential(
+        self.layers = \
+        nn.Sequential(
             nn.Linear(num_features, 256),
             nn.ReLU(),
             nn.Linear(256, 128),

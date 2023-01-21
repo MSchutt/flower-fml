@@ -93,7 +93,7 @@ def brute_force_model(X_train, y_train):
 if __name__ == '__main__':
 
     pth = Path('data/diamonds.csv')
-    (X_train, y_train), (X_valid, y_valid), (X_test, y_test) = load_data(pth)
+    (X_train, y_train), (X_test, y_test) = load_data(pth)
 
     # brute_force_model(X_train, y_train)
     print('Fitting RandomForestRegressor')

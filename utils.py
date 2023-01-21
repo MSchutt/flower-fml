@@ -14,35 +14,52 @@ warnings.filterwarnings("ignore")
 
 # DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+def get_partition(dataset, partition_idx, total_partition):
+    total_dataset = len(dataset)
 
-def load_partition(idx: int, tp: int, enable_small_dataset: bool = False):
-    total_partitions = tp + 1
-    """Load 1/xth of the training and test data to simulate a partition."""
-    (X_train, y_train), (X_valid, y_valid), _ = load_data()
+    n = int(total_dataset / total_partition)
+    partition = torch.utils.data.Subset(dataset, range(partition_idx * n, (partition_idx + 1) * n))
+
+    return partition
+
+# Returns start and end range of a given partition
+def get_partition_range(n_total, total_clients, idx, uneven=False):
+    """Get the range of indices for the partition."""
+    normal_partition = int(n_total / total_clients)
+
+    if uneven:
+        # Smaller batch -> only 10% of the partition data
+        small_batch = int(normal_partition * .1)
+        # Larger batch -> 190% of the partition data
+        large_batch = int(normal_partition * 1.9)
+        start = 0
+        for i in range(idx):
+            if i % 2 == 1:
+                start += small_batch
+            else:
+                start += large_batch
+        end = start + (small_batch if idx % 2 == 1 else large_batch)
+        return int(start), int(end)
+
+
+
+    return idx * normal_partition, (idx + 1) * normal_partition
+
+def load_partition(idx: int, total_partitions: int, enable_small_dataset: bool = False):
+    (X_train, y_train), (X_test, y_test) = load_data()
     train_dataset = DiamondDataset(torch.from_numpy(X_train.values).float(), torch.from_numpy(y_train.values).float())
-    valid_dataset = DiamondDataset(torch.from_numpy(X_valid.values).float(), torch.from_numpy(y_valid.values).float())
+    testset = DiamondDataset(torch.from_numpy(X_test.values).float(), torch.from_numpy(y_test.values).float())
 
-    num_examples = {
-        "trainset": len(train_dataset),
-        "valset": len(valid_dataset)
-    }
+    # Get the ranges of the partition (including uneven distributions)
+    train_start, train_end = get_partition_range(len(train_dataset), total_partitions, idx, uneven=enable_small_dataset)
 
-    n_train = int(num_examples["trainset"] / total_partitions)
-    n_test = int(num_examples["valset"] / total_partitions)
-
-    # If the parameter is enabled, we only take 25% of the available data
-    if enable_small_dataset:
-        n_train = int(n_train * .25)
-        n_test = int(n_test * .25)
-
-    train_partition = torch.utils.data.Subset(train_dataset, range(idx * n_train, (idx + 1) * n_train))
-    valid_partition = torch.utils.data.Subset(valid_dataset, range(idx * n_test, (idx + 1) * n_test))
-    return train_partition, valid_partition, len(X_valid.columns)
+    # Get the partition from the pytorch dataset
+    train_partition = torch.utils.data.Subset(train_dataset, range(train_start, train_end))
+    return train_partition, testset, len(X_train.columns)
 
 
-def train(net, trainloader, valloader, epochs, device: str = "cpu"):
+def train(net, trainloader, testloader, epochs, device: str = "cpu"):
     """Train the network on the training set."""
-    print("Starting training...")
     net.to(device)  # move model to GPU if available
     criterion = nn.MSELoss()
     optimizer = optim.Adam(net.parameters(), lr=0.001)
@@ -58,20 +75,19 @@ def train(net, trainloader, valloader, epochs, device: str = "cpu"):
     net.to("cpu")  # move model back to CPU
 
     train_loss, train_r2 = test(net, trainloader)
-    val_loss, val_r2 = test(net, valloader)
+    test_loss, test_r2 = test(net, testloader)
 
     results = {
-        "train_loss": train_loss,
+        "train_loss": float(train_loss),
         "train_r2": train_r2,
-        "val_loss": val_loss,
-        "val_r2": val_r2
+        "test_loss": float(test_loss),
+        "test_r2": test_r2,
     }
     return results
 
 
 def test(net, testloader, device: str = "cpu"):
     """Validate the network on the entire test set."""
-    print("Starting evalutation...")
     net.to(device)  # move model to GPU if available
     total, loss = 0, 0.0
     net.eval()
@@ -79,17 +95,16 @@ def test(net, testloader, device: str = "cpu"):
         for batch_idx, (X_test_batch, y_test_batch) in enumerate(testloader):
             X_test_batch, y_test_batch = X_test_batch.to(device), y_test_batch.to(device)
             predictions = net(X_test_batch.to(device))
+            # get loss
+            loss += nn.MSELoss()(predictions, y_test_batch.unsqueeze(1).to(device))
             predictions = predictions.cpu().numpy()
             # calculate statistics
             total += y_test_batch.size(0)
             r2 = r2_score(y_test_batch, predictions)
-            # mse = mean_squared_error(y_test_batch, predictions)
-            # rmse = np.sqrt(mse)
-    if total > 0:
-        loss /= total
     net.to("cpu")  # move model back to CPU
-    return loss, r2
+    return float(loss), r2
 
 def get_model_params(model):
     """Returns a model's parameters."""
     return [val.cpu().numpy() for _, val in model.state_dict().items()]
+

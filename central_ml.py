@@ -10,17 +10,17 @@ from diamondmodel.loader import load_data
 from pathlib import Path
 import seaborn as sns
 
-from diamondmodel.neural_network import MultipleRegression, MultipleRegression
+from diamondmodel.neural_network import MultipleRegression
 
-BATCH_SIZE = 16
-EPOCHS = 10
+BATCH_SIZE = 64
+EPOCHS = 100
 LEARNING_RATE = 0.001
 
 def main():
     pth = Path('./data/diamonds.csv')
     # Load the data
-    (X_train, y_train), (X_valid, y_valid), (X_test, y_test) = load_data(pth)
-    train_loader, val_loader, test_loader, train_dataset, valid_dataset, test_dataset = generate_dataloaders(X_train, y_train, X_valid, y_valid, X_test, y_test, BATCH_SIZE)
+    (X_train, y_train), (X_test, y_test) = load_data(pth)
+    train_loader, test_loader, train_dataset, test_dataset = generate_dataloaders(X_train, y_train, X_test, y_test, BATCH_SIZE)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     # Create and train the model

@@ -5,6 +5,7 @@ import torch
 import flwr as fl
 import argparse
 from collections import OrderedDict
+from pathlib import Path
 
 from diamondmodel.neural_network import MultipleRegression, MultipleRegression
 from seed import seed_worker
@@ -15,14 +16,16 @@ class DiamondClient(fl.client.NumPyClient):
     def __init__(
             self,
             trainset: torchvision.datasets,
-            valset: torchvision.datasets,
             device,
-            num_features: int
+            num_features: int,
+            log_file_path: Path,
+            testset: torchvision.datasets
     ):
         self.device = device
         self.trainset = trainset
-        self.valset = valset
         self.num_features = num_features
+        self.log_file_path = log_file_path
+        self.testset = testset
 
     def set_parameters(self, parameters):
         """Loads a model and replaces it parameters with the ones received from the server."""
@@ -33,8 +36,6 @@ class DiamondClient(fl.client.NumPyClient):
         return model
 
     def fit(self, parameters, config):
-        """Train parameters on the locally held validation set."""
-
         # Update local model parameters
         model = self.set_parameters(parameters)
 
@@ -42,27 +43,28 @@ class DiamondClient(fl.client.NumPyClient):
         batch_size: int = config["batch_size"]
         epochs: int = config["local_epochs"]
 
-        # Setup train and validation loader
-        train_loader = DataLoader(self.trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker)
-        val_loader = DataLoader(self.valset, batch_size=batch_size, worker_init_fn=seed_worker)
+        # Setup train and test loader
+        trainloader = DataLoader(self.trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker)
+        testloader = DataLoader(self.testset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker)
 
-        results = utils.train(model, train_loader, val_loader, epochs, self.device)
+        results = utils.train(model, trainloader, testloader, epochs, self.device)
 
         parameters_prime = utils.get_model_params(model)
         num_examples_train = len(self.trainset)
 
+        # Evaluate global model parameters on the local test data and global test set and return results
+        testloader = DataLoader(self.testset, batch_size=batch_size, worker_init_fn=seed_worker)
+        trainloader = DataLoader(self.trainset, batch_size=batch_size, worker_init_fn=seed_worker)
+
+        # Calculate both train and test loss
+        loss, r2 = utils.test(model, trainloader, self.device)
+        loss_test, r2_test = utils.test(model, testloader, self.device)
+
+        # Additional write the loss into the log file (one for each client)
+        with open(self.log_file_path, "a") as f:
+            f.write(f"{loss},{r2},{loss_test},{r2_test}\n")
+
         return parameters_prime, num_examples_train, results
-
-    def evaluate(self, parameters, config):
-        """Evaluate parameters on the locally held test set."""
-        # Update local model parameters
-        model = self.set_parameters(parameters)
-
-        # Evaluate global model parameters on the local validation data and return results
-        valloader = DataLoader(self.valset, batch_size=16, worker_init_fn=seed_worker)
-
-        loss, r2 = utils.test(model, valloader, self.device)
-        return float(loss), len(self.valset), {"r2": float(r2)}
 
 
 def main() -> None:
@@ -93,17 +95,30 @@ def main() -> None:
         required=False,
         help="Should the data be distributed evenly or randomly",
     )
+    parser.add_argument(
+        "--runnumber",
+        type=int,
+        default=1,
+        required=False,
+        help="Run number (used for getting the correct logfile)",
+    )
     args = parser.parse_args()
 
-    enable_small_dataset = int(args.distribution) == 1
-
     # Load a subset of test to simulate the local data partition (every even client)
-    trainset, valset, num_features = utils.load_partition(args.partition, args.clients, int(args.partition) % 2 == 0 and enable_small_dataset)
+    trainset, testset, num_features = utils.load_partition(args.partition, args.clients, int(args.distribution) == 1)
+
+    # All log files (r2, loss) are stored in the log folder with following folder structure
+    # logfiles > [folder: runnumber; i.e. 1, 2, 3] > client_{{client-number}}.csv
+    # These files can then be loaded and analyzed (to compare the local model performance)
+    # Specify a log file
+    log_file_path = Path("logfiles", str(int(args.runnumber)), f"client_{args.partition}.csv")
+    # Ensure that the folder exists
+    log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Start Flower client
-    client = DiamondClient(trainset, valset, device, num_features)
+    client = DiamondClient(trainset, device, num_features, log_file_path, testset)
 
-    fl.client.start_numpy_client(server_address="0.0.0.0:8080", client=client)
+    fl.client.start_numpy_client(server_address="0.0.0.0:8082", client=client)
     exit(0)
 
 if __name__ == "__main__":
