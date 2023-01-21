@@ -1,8 +1,6 @@
 import torch
 from torch.utils.data import DataLoader
 
-from seed import seed_worker
-
 
 # PyTorch Dataset
 class DiamondDataset(torch.utils.data.Dataset):
@@ -21,7 +19,7 @@ def generate_dataloaders(X_train, y_train, X_test, y_test, batch):
     train_dataset = DiamondDataset(torch.from_numpy(X_train.values).float(), torch.from_numpy(y_train.values).float())
     test_dataset = DiamondDataset(torch.from_numpy(X_test.values).float(), torch.from_numpy(y_test.values).float())
 
-    train_loader = DataLoader(dataset=train_dataset, batch_size=batch, shuffle=True, worker_init_fn=seed_worker)
-    test_loader = DataLoader(dataset=test_dataset, batch_size=batch, shuffle=True, worker_init_fn=seed_worker)
+    trainloader = DataLoader(dataset=train_dataset, batch_size=batch, shuffle=True)
+    testloader = DataLoader(dataset=test_dataset, batch_size=len(test_dataset))
 
-    return train_loader, test_loader, train_dataset, test_dataset
+    return trainloader, testloader, train_dataset, test_dataset

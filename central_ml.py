@@ -11,12 +11,15 @@ from pathlib import Path
 import seaborn as sns
 
 from diamondmodel.neural_network import MultipleRegression
+from seed import setup_seed
 
-BATCH_SIZE = 64
-EPOCHS = 100
+BATCH_SIZE = 32
+EPOCHS = 150
 LEARNING_RATE = 0.001
 
 def main():
+    setup_seed()
+
     pth = Path('./data/diamonds.csv')
     # Load the data
     (X_train, y_train), (X_test, y_test) = load_data(pth)
@@ -29,8 +32,7 @@ def main():
     model.to(device)
     criterion = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
-    loss_stats = train_model(model, criterion, optimizer, train_loader, val_loader, EPOCHS, device)
-
+    loss_stats = train_model(model, criterion, optimizer, train_loader, test_loader, EPOCHS, device)
 
     # Evaluate
     evaluate_model(model, X_test, y_test, device)

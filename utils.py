@@ -51,10 +51,10 @@ def load_partition(idx: int, total_partitions: int, enable_small_dataset: bool =
     testset = DiamondDataset(torch.from_numpy(X_test.values).float(), torch.from_numpy(y_test.values).float())
 
     # Get the ranges of the partition (including uneven distributions)
-    train_start, train_end = get_partition_range(len(train_dataset), total_partitions, idx, uneven=enable_small_dataset)
+    train_start, train_end = get_partition_range(len(train_dataset) - 1, total_partitions, idx, uneven=enable_small_dataset)
 
     # Get the partition from the pytorch dataset
-    train_partition = torch.utils.data.Subset(train_dataset, range(train_start, train_end))
+    train_partition = torch.utils.data.Subset(train_dataset, range(train_start, (train_end if train_end < len(train_dataset) else len(train_dataset))))
     return train_partition, testset, len(X_train.columns)
 
 

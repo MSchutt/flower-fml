@@ -8,6 +8,7 @@ from sklearn.model_selection import RandomizedSearchCV
 from pathlib import Path
 
 from diamondmodel.loader import load_data
+from seed import setup_seed
 
 
 def mean_absolute_error(y_test, y_pred):
@@ -91,6 +92,7 @@ def brute_force_model(X_train, y_train):
 
 # Centralized reference model
 if __name__ == '__main__':
+    setup_seed()
 
     pth = Path('data/diamonds.csv')
     (X_train, y_train), (X_test, y_test) = load_data(pth)

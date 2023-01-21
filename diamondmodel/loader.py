@@ -35,7 +35,7 @@ def transform_data(df: pd.DataFrame):
     y = df['price']
     return X, y
 
-def load_data(file_path: Path = None, random_state=42, test_size=0.3):
+def load_data(file_path: Path = None, random_state=42, test_size=0.2):
     if file_path is None:
         file_path = Path('./data/diamonds.csv')
     data = pd.read_csv(file_path, usecols=columns)

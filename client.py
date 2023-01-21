@@ -7,10 +7,8 @@ import argparse
 from collections import OrderedDict
 from pathlib import Path
 
-from diamondmodel.neural_network import MultipleRegression, MultipleRegression
-from seed import seed_worker
-g = torch.Generator()
-g.manual_seed(42)
+from diamondmodel.neural_network import MultipleRegression
+from seed import setup_seed
 
 class DiamondClient(fl.client.NumPyClient):
     def __init__(
@@ -44,8 +42,8 @@ class DiamondClient(fl.client.NumPyClient):
         epochs: int = config["local_epochs"]
 
         # Setup train and test loader
-        trainloader = DataLoader(self.trainset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker)
-        testloader = DataLoader(self.testset, batch_size=batch_size, shuffle=True, worker_init_fn=seed_worker)
+        trainloader = DataLoader(self.trainset, batch_size=batch_size, shuffle=True)
+        testloader = DataLoader(self.testset, batch_size=len(self.testset))
 
         results = utils.train(model, trainloader, testloader, epochs, self.device)
 
@@ -53,8 +51,8 @@ class DiamondClient(fl.client.NumPyClient):
         num_examples_train = len(self.trainset)
 
         # Evaluate global model parameters on the local test data and global test set and return results
-        testloader = DataLoader(self.testset, batch_size=batch_size, worker_init_fn=seed_worker)
-        trainloader = DataLoader(self.trainset, batch_size=batch_size, worker_init_fn=seed_worker)
+        testloader = DataLoader(self.testset, batch_size=len(self.testset))
+        trainloader = DataLoader(self.trainset, batch_size=batch_size)
 
         # Calculate both train and test loss
         loss, r2 = utils.test(model, trainloader, self.device)
@@ -66,8 +64,18 @@ class DiamondClient(fl.client.NumPyClient):
 
         return parameters_prime, num_examples_train, results
 
+    def evaluate(
+        self, parameters, config
+    ):
+        """Evaluate the model on the local test set."""
+        model = self.set_parameters(parameters)
+        testloader = DataLoader(self.testset, batch_size=len(self.testset))
+        loss, r2 = utils.test(model, testloader, self.device)
+        return float(loss), len(self.testset), {"r2": float(r2)}
+
 
 def main() -> None:
+    setup_seed()
     device = torch.device(
         "cuda:0" if torch.cuda.is_available() else "cpu"
     )
@@ -114,11 +122,13 @@ def main() -> None:
     log_file_path = Path("logfiles", str(int(args.runnumber)), f"client_{args.partition}.csv")
     # Ensure that the folder exists
     log_file_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(log_file_path, "w") as f:
+        f.write("loss,r2,loss_test,r2_test\n")
 
     # Start Flower client
     client = DiamondClient(trainset, device, num_features, log_file_path, testset)
 
-    fl.client.start_numpy_client(server_address="0.0.0.0:8080", client=client)
+    fl.client.start_numpy_client(server_address="0.0.0.0:8088", client=client)
     exit(0)
 
 if __name__ == "__main__":

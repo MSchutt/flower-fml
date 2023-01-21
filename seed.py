@@ -3,13 +3,9 @@ import random
 import numpy as np
 import torch
 
-warnings.filterwarnings("ignore")
-np.random.seed(42)
-torch.manual_seed(42)
-random.seed(42)
-g = torch.Generator()
-g.manual_seed(42)
-
-def seed_worker(worker_id):
+# Setup seeds for reproducibility
+def setup_seed():
+    warnings.filterwarnings("ignore")
     np.random.seed(42)
+    torch.manual_seed(42)
     random.seed(42)

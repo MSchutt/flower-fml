@@ -16,9 +16,10 @@ import utils
 import warnings
 import random
 from diamondmodel.dataset import generate_dataloaders
+from diamondmodel.evaluate import evaluate_model
 from diamondmodel.loader import load_data
 from diamondmodel.neural_network import MultipleRegression, MultipleRegression
-from seed import seed_worker
+from seed import setup_seed
 
 warnings.filterwarnings("ignore")
 np.random.seed(42)
@@ -41,10 +42,11 @@ def get_fit_config(batch_size: int, local_epochs: int):
     return fit_config
 
 
-def get_evaluate_fn(model: torch.nn.Module, batch_size, testset, log_path: Path, params):
+def get_evaluate_fn(model: torch.nn.Module, batch_size, testset):
     """Return an evaluation function for server-side evaluation."""
 
-    test_loader = DataLoader(testset, batch_size=batch_size, worker_init_fn=seed_worker)
+    # Ensure that all the data is used for testing
+    testloader = DataLoader(testset, batch_size=len(testset))
 
     # The `evaluate` function will be called after every round
     def evaluate(
@@ -57,7 +59,7 @@ def get_evaluate_fn(model: torch.nn.Module, batch_size, testset, log_path: Path,
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         model.load_state_dict(state_dict, strict=True)
 
-        loss, r2 = utils.test(model, test_loader)
+        loss, r2 = utils.test(model, testloader)
 
         return loss, {"r2": r2}
 
@@ -69,6 +71,7 @@ def main():
     1. server-side parameter initialization
     2. server-side parameter evaluation
     """
+    setup_seed()
     start = time()
     # Load data and model here to avoid the overhead of doing it in `evaluate` itself
     (X_train, y_train), (X_test, y_test) = load_data()
@@ -132,12 +135,14 @@ def main():
     args = parser.parse_args()
 
     # All log files (r2, loss) are stored in the log folder with following folder structure
-    # logfiles > [folder: runnumber; i.e. 1, 2, 3] > client_{{client-number}}.csv
+    # logfiles > [folder: runnumber; i.e. 1, 2, 3] > client_{{client-number}}.csv/server.csv
     # These files can then be loaded and analyzed (to compare the local models performance)
     # Specify a log file
     log_file_path = Path("logfiles", str(int(args.runnumber)), "server.csv")
     # Ensure that the folder exists
     log_file_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(log_file_path, "w") as f:
+        f.write("r2\n")
 
     params = {
         "local_epochs": args.localepochs,
@@ -158,20 +163,17 @@ def main():
         # min_fit_clients : int, optional
         min_available_clients=args.clients,
         # Server side metrics
-        evaluate_fn=get_evaluate_fn(model, args.batchsize, test_dataset, log_file_path, params),
+        evaluate_fn=get_evaluate_fn(model, args.batchsize, test_dataset),
         on_fit_config_fn=get_fit_config(batch_size=args.batchsize, local_epochs=args.localepochs),
         initial_parameters=fl.common.ndarrays_to_parameters(model_parameters),
     )
 
     # Start Flower server for four rounds of federated learning
     test = fl.server.start_server(
-        server_address="0.0.0.0:8080",
+        server_address="0.0.0.0:8088",
         config=fl.server.ServerConfig(num_rounds=args.numrounds),
         strategy=strategy,
     )
-
-    print(test.losses_centralized)
-    print(test.metrics_centralized)
 
     with open(log_file_path, "a") as f:
         for (_, r2) in test.metrics_centralized["r2"]:
