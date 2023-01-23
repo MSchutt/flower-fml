@@ -15,7 +15,7 @@ fig, ax = plt.subplots(1, 2)
 fig.tight_layout()
 
 sns.set_palette("pastel")
-sns.barplot(x='fraction_fit', y='traintime', data=aggregated, ax=ax[0])
+sns.barplot(x='fraction_fit', y='traintime', data=aggregated, ax=ax[0], color='lightblue')
 # Show concrete values for each barplot
 for p in ax[0].patches:
     ax[0].annotate(f'{p.get_height():.0f}s', (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='center',
@@ -23,7 +23,7 @@ for p in ax[0].patches:
 ax[0].set_xlabel('Fraction of clients')
 ax[0].set_ylabel('Training time [s]')
 
-sns.barplot(x='fraction_fit', y='r2', data=aggregated, ax=ax[1])
+sns.barplot(x='fraction_fit', y='r2', data=aggregated, ax=ax[1], color='lightblue')
 # Show concrete values for each barplot
 for p in ax[1].patches:
     ax[1].annotate(f'{p.get_height():.3f}', (p.get_x() + p.get_width() / 2., p.get_height()), ha='center', va='center',
