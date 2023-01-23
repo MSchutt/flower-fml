@@ -52,7 +52,7 @@ def start_experiment():
                             '''
                             call(script, shell=True, executable='/bin/bash', close_fds=True)
                             print(
-                                f"Starting experiment with local_epoch={local_epoch}, local_batch_size={local_batch_size}, client={client}, round={round}, enable distribution={distribution}, client sampling={fraction_fit}")
+                                f"Finisheds experiment with local_epoch={local_epoch}, local_batch_size={local_batch_size}, client={client}, round={round}, enable distribution={distribution}, client sampling={fraction_fit}")
                             sys.stdout.flush()
                             progress = float(i / total_runs) * 100
                             print(f'Progress: {progress:.2f}% ({i}/{total_runs} runs)')

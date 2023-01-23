@@ -18,7 +18,7 @@ import random
 from diamondmodel.dataset import generate_dataloaders
 from diamondmodel.evaluate import evaluate_model
 from diamondmodel.loader import load_data
-from diamondmodel.neural_network import MultipleRegression, MultipleRegression
+from diamondmodel.neural_network import DiamondNN, DiamondNN
 from seed import setup_seed
 
 warnings.filterwarnings("ignore")
@@ -78,7 +78,7 @@ def main():
     train_loader, test_loader, train_dataset, test_dataset = generate_dataloaders(X_train, y_train, X_test, y_test, 32)
 
     # Create the model
-    model = MultipleRegression(len(X_train.columns))
+    model = DiamondNN(len(X_train.columns))
     model_parameters = [val.cpu().numpy() for _, val in model.state_dict().items()]
 
     # Parse command line argument `partition`

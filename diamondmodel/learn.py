@@ -35,7 +35,7 @@ def train_model(model, criterion, optimizer, train_loader, test_loader, epochs, 
         loss_stats['val'].append(val_epoch_loss / len(test_loader))
 
         print(
-            f'Epoch {e + 0:03}: | Train Loss: {train_epoch_loss / len(train_loader):.5f} | Val Loss: {val_epoch_loss / len(test_loader):.5f}')
+            f'Epoch {e + 0:03}: | Train Loss: {train_epoch_loss / len(train_loader):.5f} | Test Loss: {val_epoch_loss / len(test_loader):.5f}')
 
     return loss_stats
 

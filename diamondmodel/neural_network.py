@@ -1,9 +1,9 @@
 from torch import nn
 
 # Neural Network
-class MultipleRegression(nn.Module):
+class DiamondNN(nn.Module):
     def __init__(self, num_features: int):
-        super(MultipleRegression, self).__init__()
+        super(DiamondNN, self).__init__()
         self.layers = \
         nn.Sequential(
             nn.Linear(num_features, 256),

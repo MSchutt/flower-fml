@@ -7,7 +7,7 @@ import argparse
 from collections import OrderedDict
 from pathlib import Path
 
-from diamondmodel.neural_network import MultipleRegression
+from diamondmodel.neural_network import DiamondNN
 from seed import setup_seed
 
 class DiamondClient(fl.client.NumPyClient):
@@ -27,7 +27,7 @@ class DiamondClient(fl.client.NumPyClient):
 
     def set_parameters(self, parameters):
         """Loads a model and replaces it parameters with the ones received from the server."""
-        model = MultipleRegression(self.num_features)
+        model = DiamondNN(self.num_features)
         params_dict = zip(model.state_dict().keys(), parameters)
         state_dict = OrderedDict({k: torch.tensor(v) for k, v in params_dict})
         model.load_state_dict(state_dict, strict=True)
