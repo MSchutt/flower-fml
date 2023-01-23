@@ -31,12 +31,6 @@ def start_experiment():
                     for distribution in enable_distribution:
                         for fraction_fit in fraction_fits:
                             i += 1
-                            if fraction_fit != 0.5:
-                                print('Skipping fraction fit 0.5')
-                                continue
-                            if i <= 961:
-                                print('Skipping i', i)
-                                continue
                             print(
                                 f"Starting experiment with local_epoch={local_epoch}, local_batch_size={local_batch_size}, client={client}, round={round}, enable distribution={distribution}, client sampling={fraction_fit}")
                             script = f'''
