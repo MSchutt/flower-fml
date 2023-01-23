@@ -12,8 +12,8 @@ from diamondmodel.loader import load_data
 
 warnings.filterwarnings("ignore")
 
-# DEVICE = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+# Returns a partition given the model's index and the total number of clients
 def get_partition(dataset, partition_idx, total_partition):
     total_dataset = len(dataset)
 
@@ -27,6 +27,7 @@ def get_partition_range(n_total, total_clients, idx, uneven=False):
     """Get the range of indices for the partition."""
     normal_partition = int(n_total / total_clients)
 
+    # Calculate an uneven partition (10% and 190% of the desired partition size)
     if uneven:
         # Smaller batch -> only 10% of the partition data
         small_batch = int(normal_partition * .1)
@@ -45,6 +46,7 @@ def get_partition_range(n_total, total_clients, idx, uneven=False):
 
     return idx * normal_partition, (idx + 1) * normal_partition
 
+# Load a partition of the dataset
 def load_partition(idx: int, total_partitions: int, enable_small_dataset: bool = False):
     (X_train, y_train), (X_test, y_test) = load_data()
     train_dataset = DiamondDataset(torch.from_numpy(X_train.values).float(), torch.from_numpy(y_train.values).float())
@@ -56,7 +58,6 @@ def load_partition(idx: int, total_partitions: int, enable_small_dataset: bool =
     # Get the partition from the pytorch dataset
     train_partition = torch.utils.data.Subset(train_dataset, range(train_start, (train_end if train_end < len(train_dataset) else len(train_dataset))))
     return train_partition, testset, len(X_train.columns)
-
 
 def train(net, trainloader, testloader, epochs, device: str = "cpu"):
     """Train the network on the training set."""

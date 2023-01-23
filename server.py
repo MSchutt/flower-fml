@@ -134,7 +134,7 @@ def main():
     )
     args = parser.parse_args()
 
-    # All log files (r2, loss) are stored in the log folder with following folder structure
+    # All log files (r2) are stored in the log folder with following folder structure
     # logfiles > [folder: runnumber; i.e. 1, 2, 3] > client_{{client-number}}.csv/server.csv
     # These files can then be loaded and analyzed (to compare the local models performance)
     # Specify a log file

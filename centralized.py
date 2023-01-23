@@ -1,16 +1,31 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
+import pandas as pd
+import torch
+import seaborn as sns
 
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import RandomizedSearchCV
-from pathlib import Path
 
+from pathlib import Path
+from torch import nn, optim
+
+from diamondmodel.dataset import generate_dataloaders
+from diamondmodel.evaluate import evaluate_model
+from diamondmodel.learn import train_model
 from diamondmodel.loader import load_data
+from diamondmodel.neural_network import DiamondNN
+
 from seed import setup_seed
 
+# Parameters for the centralized NN
+BATCH_SIZE = 32
+EPOCHS = 55
+LEARNING_RATE = 0.001
 
+# Helper function to calculate MAE
 def mean_absolute_error(y_test, y_pred):
     return np.mean(np.abs(y_pred - y_test))
 
@@ -90,6 +105,30 @@ def brute_force_model(X_train, y_train):
     return rf_random.best_estimator_
 
 
+def nn_results(X_train, y_train, X_test, y_test):
+    # Load the data
+    train_loader, test_loader, train_dataset, test_dataset = generate_dataloaders(X_train, y_train, X_test, y_test,
+                                                                                  BATCH_SIZE)
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    # Create and train the model
+    num_features = len(X_train.columns)
+    model = DiamondNN(num_features)
+    model.to(device)
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+    loss_stats = train_model(model, criterion, optimizer, train_loader, test_loader, EPOCHS, device)
+
+    # Evaluate
+    evaluate_model(model, X_test, y_test, device)
+
+    # Show training progress
+    train_val_loss_df = pd.DataFrame.from_dict(loss_stats).reset_index().melt(id_vars=['index']).rename(
+        columns={"index": "epochs"})
+    plt.figure(figsize=(15, 8))
+    sns.lineplot(data=train_val_loss_df, x="epochs", y="value", hue="variable").set_title('Train-Val Loss/Epoch')
+    plt.show()
+
 # Centralized reference model
 if __name__ == '__main__':
     setup_seed()
@@ -97,9 +136,10 @@ if __name__ == '__main__':
     pth = Path('data/diamonds.csv')
     (X_train, y_train), (X_test, y_test) = load_data(pth)
 
+    # Uncomment this to brute force the best parameters (takes a while!)
     # brute_force_model(X_train, y_train)
     print('Fitting RandomForestRegressor')
-    rfr = RandomForestRegressor()
+    rfr = RandomForestRegressor(n_estimators=100)
     rfr.fit(X_train, y_train)
     calculate_and_print_scores('Random Forest', rfr, X_train, y_train, X_test, y_test)
     print('Finished fitting RandomForestRegressor')
@@ -111,4 +151,8 @@ if __name__ == '__main__':
     calculate_and_print_scores('LinearRegression', lr, X_train, y_train, X_test, y_test)
     print('Finished fitting LinearRegression')
 
+    # NN
+    print('Fitting NN')
+    nn_results(X_train, y_train, X_test, y_test)
+    print('Finished fitting NN')
 

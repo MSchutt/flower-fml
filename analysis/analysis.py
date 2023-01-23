@@ -5,7 +5,7 @@ import numpy as np
 
 # Training time and fraction fit
 
-df = pd.read_csv('results.csv')
+df = pd.read_csv('../results.csv')
 
 # Plot the average traintime for fraction_fit
 aggregated = df.groupby(['fraction_fit']).mean().reset_index()
